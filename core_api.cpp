@@ -141,7 +141,6 @@ bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 bool check_done_exec(std::vector<Thread*>& threads) {
 	for(Thread* thread : threads) {
 		if (!thread->get_halt()) {
-			// std::cout << "Thread #" << thread->get_threadid() << " is not on halt." << std::endl;
 			return false;
 		}
 	}
@@ -163,15 +162,11 @@ void CORE_BlockedMT() {
 	bool ctx_switch_flag = false;
 	int next_thread = 0;
 
-	std::cout << "STARTS BLOCKING" << std::endl;
-
 	while (!check_done_exec(threads_blocked)) {
 		Thread* thread = threads_blocked.at(thread_num);
 
 		Instruction* inst = thread->get_inst_thread();
 		inst_num_blocked++;
-
-		std::cout << "thread: " << thread_num << " inst total: " << inst_num_blocked << std::endl;
 
 		int* reg_file = thread->get_context_p()->reg;
 
@@ -292,8 +287,6 @@ void CORE_BlockedMT() {
 				break;
 		}
 	}
-
-	std::cout << "END BLOCKING" <<std::endl;
 }
 
 void CORE_FinegrainedMT() {
@@ -311,7 +304,6 @@ void CORE_FinegrainedMT() {
 	int next_thread = 0;
 
 	while (!check_done_exec(threads_fg)) {
-		std::cout << "BIG WHILE" << std::endl;
 		Thread* thread = threads_fg.at(thread_num);
 
 		Instruction* inst = thread->get_inst_thread();
@@ -382,15 +374,12 @@ void CORE_FinegrainedMT() {
 				cycles_fg++;
 				for (Thread* t : threads_fg) {
 					t->update_wait_cycles(1);
-					std::cout << "Thread " << t->get_threadid() << " Wait " << t->get_wait_cycles() << std::endl;
 				}
 
 				ctx_switch_flag = context_switch(threads_fg, thread_num, &next_thread);
-				std::cout << "manage ctx switch " << ctx_switch_flag << std::endl;
 			}
 		}
 
-		std::cout << "Thread " << thread_num << " Inst " << inst->opcode << std::endl;
 		thread_num = next_thread;
 	}
 }
