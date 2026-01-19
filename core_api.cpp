@@ -160,6 +160,8 @@ void CORE_BlockedMT() {
 		Instruction* inst = thread->get_inst_thread();
 		inst_num_blocked++;
 
+		std::cout << "thread: " << thread_num << " inst total: " << inst_num_blocked << std::endl;
+
 		int* reg_file = thread->get_context_p()->reg;
 
 		// Cycles maintenance for threads
