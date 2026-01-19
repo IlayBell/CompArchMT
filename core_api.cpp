@@ -223,11 +223,6 @@ void CORE_BlockedMT() {
 					}
 				}
 
-				// Check if curr thread is available
-				if (!thread->get_halt() && thread->get_wait_cycles() == 0) {
-					next_thread = thread_num;
-				}
-
 				thread_num = next_thread;
 
 				break;
@@ -258,11 +253,6 @@ void CORE_BlockedMT() {
 					}
 				}
 
-				// Check if curr thread is available
-				if (!thread->get_halt() && thread->get_wait_cycles() == 0) {
-					next_thread = thread_num;
-				}
-				
 				thread_num = next_thread;
 
 				break;
@@ -289,7 +279,11 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				}
 
-				cycles_blocked += SIM_GetSwitchCycles(); // ctx switch has penalty in blocked
+				// ctx switch has penalty in blocked only if needed ctx switch
+				if (!check_done_exec(threads_blocked)) {
+					cycles_blocked += SIM_GetSwitchCycles();
+				} 
+				
 				break;
 			}
 
