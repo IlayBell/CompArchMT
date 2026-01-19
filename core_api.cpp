@@ -348,6 +348,8 @@ void CORE_FinegrainedMT() {
 				uint32_t addr = reg_file[inst->src1_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
 				SIM_MemDataRead(addr, reg_file + inst->dst_index); // Used pointer arithmetics
 
+				thread->set_wait_cycles(SIM_GetLoadLat());
+
 				break;
 			}
 			case CMD_STORE: { // Mem[dst + src2] <- src1  (src2 may be an immediate)
@@ -356,6 +358,8 @@ void CORE_FinegrainedMT() {
 				// Computing address in case of src2 being imm or not.
 				uint32_t addr = reg_file[inst->dst_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
 				SIM_MemDataWrite(addr, reg_file[inst->src1_index]); // Used pointer arithmetics
+
+				thread->set_wait_cycles(SIM_GetStoreLat());
 
 				break;
 			}
