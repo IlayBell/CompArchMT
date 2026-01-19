@@ -141,7 +141,7 @@ bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 bool check_done_exec(std::vector<Thread*>& threads) {
 	for(Thread* thread : threads) {
 		if (!thread->get_halt()) {
-			std::cout << "Thread #" << thread->get_threadid() << " is not on halt." << std::endl;
+			// std::cout << "Thread #" << thread->get_threadid() << " is not on halt." << std::endl;
 			return false;
 		}
 	}
