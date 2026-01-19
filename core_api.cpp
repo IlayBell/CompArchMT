@@ -419,9 +419,17 @@ double CORE_FinegrainedMT_CPI(){
 }
 
 void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
-	*context = *(threads_blocked.at(threadid)->get_context_p());
+	tcontext* t_ctx = threads_blocked.at(threadid)->get_context_p();
+
+	for (int i = 0; i < REGS_COUNT; i++) {
+		context->reg[i] = t_ctx->reg[i];
+	}
 }
 
 void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
-	*context = *(threads_fg.at(threadid)->get_context_p());
+	tcontext* t_ctx = threads_fg.at(threadid)->get_context_p();
+
+	for (int i = 0; i < REGS_COUNT; i++) {
+		context->reg[i] = t_ctx->reg[i];
+	}
 }
