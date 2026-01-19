@@ -204,7 +204,6 @@ void CORE_BlockedMT() {
 				uint32_t addr = reg_file[inst->src1_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
 				SIM_MemDataRead(addr, reg_file + inst->dst_index); // Used pointer arithmetics
 
-				std::cout << "loaded: " << *(reg_file + inst->dst_index) << std::endl;
 				thread->set_wait_cycles(SIM_GetLoadLat());
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
@@ -222,6 +221,11 @@ void CORE_BlockedMT() {
 							t->update_wait_cycles(1);
 						}
 					}
+				}
+
+				// Check if curr thread is available
+				if (!thread->get_halt() && thread->get_wait_cycles() == 0) {
+					next_thread = thread_num;
 				}
 
 				thread_num = next_thread;
@@ -254,6 +258,11 @@ void CORE_BlockedMT() {
 					}
 				}
 
+				// Check if curr thread is available
+				if (!thread->get_halt() && thread->get_wait_cycles() == 0) {
+					next_thread = thread_num;
+				}
+				
 				thread_num = next_thread;
 
 				break;
