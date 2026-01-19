@@ -266,7 +266,7 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				} else {
 					// Wait until there is another available thread.
-					while(!ctx_switch_flag) {
+					while(!check_done_exec(threads_blocked) && !ctx_switch_flag) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
@@ -365,7 +365,7 @@ void CORE_FinegrainedMT() {
 
 		ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-		if (!ctx_switch_flag) {
+		if (!check_done_exec(threads_blocked) && !ctx_switch_flag) {
 			// Wait until there is another available thread.
 			while(!ctx_switch_flag) {
 				cycles_blocked++;
