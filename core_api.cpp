@@ -44,7 +44,7 @@ class Thread {
 			this->halt = false;
 			this->wait_cycles = 0;
 			this->inst_idx = 0;
-			
+
 			for (int i = 0; i < REGS_COUNT; i++) {
 				this->context->reg[i] = 0;
 			}
@@ -151,6 +151,8 @@ void CORE_BlockedMT() {
 
 	bool ctx_switch_flag = false;
 	int next_thread = 0;
+
+	std::cout << "STARTS BLOCKING" << std::endl;
 
 	while (!check_done_exec(threads_blocked)) {
 		Thread* thread = threads_blocked.at(thread_num);
@@ -277,6 +279,8 @@ void CORE_BlockedMT() {
 				break;
 		}
 	}
+
+	std::cout << "END BLOCKING" <<std::endl;
 }
 
 void CORE_FinegrainedMT() {
