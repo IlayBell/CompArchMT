@@ -36,6 +36,10 @@ class Thread {
 
 		}
 
+		int get_threadid() {
+			return this->threadid;
+		}
+
 		tcontext* get_context_p() {
 			return this->context;
 		}
@@ -131,6 +135,7 @@ bool context_switch(std::vector<Thread*> threads, int curr_t, int* target_t) {
 bool check_done_exec(std::vector<Thread*> threads) {
 	for(Thread* thread : threads) {
 		if (!thread->get_halt()) {
+			std::cout << thread->get_threadid() << std::endl;
 			return false;
 		}
 	}
