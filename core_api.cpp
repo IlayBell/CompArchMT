@@ -30,11 +30,9 @@ class Thread {
 				Instruction* inst = new Instruction();
 				SIM_MemInstRead(line++, inst, this->threadid);
 				instructions.push_back(inst);
-			} while (instructions.back()->opcode == CMD_HALT);
+			} while (instructions.back()->opcode != CMD_HALT);
 			
-			this->halt = false;
-			this->wait_cycles = 0;
-			this->inst_idx = 0;
+			
 
 		}
 
@@ -43,6 +41,10 @@ class Thread {
 		}
 
 		void clean_ctx() {
+			this->halt = false;
+			this->wait_cycles = 0;
+			this->inst_idx = 0;
+			
 			for (int i = 0; i < REGS_COUNT; i++) {
 				this->context->reg[i] = 0;
 			}
@@ -270,7 +272,7 @@ void CORE_BlockedMT() {
 				cycles_blocked += SIM_GetSwitchCycles(); // ctx switch has penalty in blocked
 				break;
 			}
-			
+
 			default: // NOP
 				break;
 		}
