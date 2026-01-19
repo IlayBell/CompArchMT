@@ -423,7 +423,7 @@ void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
 	tcontext* t_ctx = threads_blocked.at(threadid)->get_context_p();
 
 	for (int i = 0; i < REGS_COUNT; i++) {
-		context->reg[i] = t_ctx->reg[i];
+		context[threadid].reg[i] = t_ctx->reg[i];
 	}
 }
 
@@ -431,6 +431,6 @@ void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
 	tcontext* t_ctx = threads_fg.at(threadid)->get_context_p();
 
 	for (int i = 0; i < REGS_COUNT; i++) {
-		context->reg[i] = t_ctx->reg[i];
+		context[threadid].reg[i] = t_ctx->reg[i];
 	}
 }
