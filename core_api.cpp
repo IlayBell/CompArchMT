@@ -311,6 +311,7 @@ void CORE_FinegrainedMT() {
 	int next_thread = 0;
 
 	while (!check_done_exec(threads_fg)) {
+		std::cout << "BIG WHILE" << std::endl;
 		Thread* thread = threads_fg.at(thread_num);
 
 		Instruction* inst = thread->get_inst_thread();
