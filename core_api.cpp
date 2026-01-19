@@ -165,19 +165,27 @@ void CORE_BlockedMT() {
 		}
 
 		switch (inst->opcode) {
-			case CMD_ADD: // dst <- src1 + src2
+			case CMD_ADD: { // dst <- src1 + src2
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] + reg_file[inst->src2_index_imm];
 				break;
-			case CMD_SUB: // dst <- src1 - src2
+			}
+
+			case CMD_SUB: { // dst <- src1 - src2
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] - reg_file[inst->src2_index_imm];
 				break;
-			case CMD_ADDI: // dst <- src1 + imm
+			}
+
+			case CMD_ADDI: { // dst <- src1 + imm
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] + inst->src2_index_imm;
 				break;
-			case CMD_SUBI: // dst <- src1 - imm
+			}
+
+			case CMD_SUBI: { // dst <- src1 - imm
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] - inst->src2_index_imm;
 				break;
-			case CMD_LOAD: //dst <- Mem[src1 + src2]  (src2 may be an immediate)
+			}
+
+			case CMD_LOAD: { //dst <- Mem[src1 + src2]  (src2 may be an immediate)
 				// ASSUMES NO DEPENDENCIES BETWEEN THREADS
 
 				// Computing address in case of src2 being imm or not.
@@ -206,7 +214,9 @@ void CORE_BlockedMT() {
 				thread_num = next_thread;
 
 				break;
-			case CMD_STORE: // Mem[dst + src2] <- src1  (src2 may be an immediate)
+			}
+
+			case CMD_STORE: {// Mem[dst + src2] <- src1  (src2 may be an immediate)
 				// ASSUMES NO DEPENDENCIES BETWEEN THREADS
 
 				// Computing address in case of src2 being imm or not.
@@ -234,8 +244,9 @@ void CORE_BlockedMT() {
 				thread_num = next_thread;
 
 				break;
-			
-			case CMD_HALT:
+			}
+
+			case CMD_HALT: {
 				thread->set_halt();
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
@@ -258,7 +269,8 @@ void CORE_BlockedMT() {
 
 				cycles_blocked += SIM_GetSwitchCycles(); // ctx switch has penalty in blocked
 				break;
-
+			}
+			
 			default: // NOP
 				break;
 		}
@@ -294,19 +306,23 @@ void CORE_FinegrainedMT() {
 		}
 
 		switch (inst->opcode) {
-			case CMD_ADD: // dst <- src1 + src2
+			case CMD_ADD: { // dst <- src1 + src2
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] + reg_file[inst->src2_index_imm];
 				break;
-			case CMD_SUB: // dst <- src1 - src2
+			}
+			case CMD_SUB: { // dst <- src1 - src2
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] - reg_file[inst->src2_index_imm];
 				break;
-			case CMD_ADDI: // dst <- src1 + imm
+			}
+			case CMD_ADDI: { // dst <- src1 + imm
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] + inst->src2_index_imm;
 				break;
-			case CMD_SUBI: // dst <- src1 - imm
+			}
+			case CMD_SUBI: { // dst <- src1 - imm
 				reg_file[inst->dst_index] = reg_file[inst->src1_index] - inst->src2_index_imm;
 				break;
-			case CMD_LOAD: //dst <- Mem[src1 + src2]  (src2 may be an immediate)
+			}
+			case CMD_LOAD: { //dst <- Mem[src1 + src2]  (src2 may be an immediate)
 				// ASSUMES NO DEPENDENCIES BETWEEN THREADS
 
 				// Computing address in case of src2 being imm or not.
@@ -314,7 +330,8 @@ void CORE_FinegrainedMT() {
 				SIM_MemDataRead(addr, reg_file + inst->dst_index); // Used pointer arithmetics
 
 				break;
-			case CMD_STORE: // Mem[dst + src2] <- src1  (src2 may be an immediate)
+			}
+			case CMD_STORE: { // Mem[dst + src2] <- src1  (src2 may be an immediate)
 				// ASSUMES NO DEPENDENCIES BETWEEN THREADS
 
 				// Computing address in case of src2 being imm or not.
@@ -322,10 +339,11 @@ void CORE_FinegrainedMT() {
 				SIM_MemDataWrite(addr, reg_file[inst->src1_index]); // Used pointer arithmetics
 
 				break;
-			
-			case CMD_HALT:
+			}
+			case CMD_HALT: {
 				thread->set_halt();
 				break;
+			}
 
 			default: // NOP
 				break;
