@@ -116,6 +116,12 @@ int cycles_fg = 0;
  */
 bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 	int next_thread_idx = curr_t;
+
+	if (threads.empty()) {
+		std::cerr << "No open thread in vector." << std::endl;
+		return false;
+	}
+
 	for (int i = 1; i < SIM_GetThreadsNum(); i++) {
 		// Cyclic run over threads
 		next_thread_idx = (curr_t + i) % SIM_GetThreadsNum();
@@ -363,17 +369,17 @@ void CORE_FinegrainedMT() {
 			
 		}
 
-		ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+		ctx_switch_flag = context_switch(threads_fg, thread_num, &next_thread);
 
-		if (!check_done_exec(threads_blocked) && !ctx_switch_flag) {
+		if (!check_done_exec(threads_fg) && !ctx_switch_flag) {
 			// Wait until there is another available thread.
 			while(!ctx_switch_flag) {
-				cycles_blocked++;
-				for (Thread* t : threads_blocked) {
+				cycles_fg++;
+				for (Thread* t : threads_fg) {
 					t->update_wait_cycles(1);
 				}
 
-				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+				ctx_switch_flag = context_switch(threads_fg, thread_num, &next_thread);
 			}
 		}
 
