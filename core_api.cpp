@@ -373,7 +373,7 @@ void CORE_FinegrainedMT() {
 
 		if (!check_done_exec(threads_fg) && !ctx_switch_flag) {
 			// Wait until there is another available thread.
-			while(!ctx_switch_flag) {
+			while(!check_done_exec(threads_fg) && !ctx_switch_flag) {
 				cycles_fg++;
 				for (Thread* t : threads_fg) {
 					t->update_wait_cycles(1);
@@ -400,7 +400,7 @@ double CORE_BlockedMT_CPI(){
 		return  -1;
 	}
 
-	return (double)inst_num_blocked / (double)cycles_blocked;
+	return (double)cycles_blocked / (double)inst_num_blocked;
 }
 
 double CORE_FinegrainedMT_CPI(){
@@ -418,7 +418,7 @@ double CORE_FinegrainedMT_CPI(){
 		return  -1;
 	}
 
-	return (double)inst_num_fg / (double)cycles_fg;
+	return (double)cycles_fg / (double)inst_num_fg;
 }
 
 void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
