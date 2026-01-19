@@ -386,6 +386,7 @@ void CORE_FinegrainedMT() {
 				}
 
 				ctx_switch_flag = context_switch(threads_fg, thread_num, &next_thread);
+				std::cout << "manage ctx switch " << ctx_switch_flag << std::endl;
 			}
 		}
 
