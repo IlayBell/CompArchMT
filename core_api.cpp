@@ -141,7 +141,7 @@ bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 bool check_done_exec(std::vector<Thread*>& threads) {
 	for(Thread* thread : threads) {
 		if (!thread->get_halt()) {
-			std::cout << "Thread #" << thread->get_threadid() << "is not on halt." << std::endl;
+			std::cout << "Thread #" << thread->get_threadid() << " is not on halt." << std::endl;
 			return false;
 		}
 	}
@@ -377,6 +377,7 @@ void CORE_FinegrainedMT() {
 				cycles_fg++;
 				for (Thread* t : threads_fg) {
 					t->update_wait_cycles(1);
+					std::cout << "Thread " << t->get_threadid() << " Wait " << t->get_wait_cycles() << std::endl;
 				}
 
 				ctx_switch_flag = context_switch(threads_fg, thread_num, &next_thread);
