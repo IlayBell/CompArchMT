@@ -114,7 +114,7 @@ int cycles_fg = 0;
  * @param[out] target_t - Next thread to run. If can't do, return curr_t.
  * @return if context switched 
  */
-bool context_switch(std::vector<Thread*> threads, int curr_t, int* target_t) {
+bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 	int next_thread_idx = curr_t;
 	for (int i = 1; i < SIM_GetThreadsNum(); i++) {
 		// Cyclic run over threads
@@ -132,7 +132,7 @@ bool context_switch(std::vector<Thread*> threads, int curr_t, int* target_t) {
 }
 
 
-bool check_done_exec(std::vector<Thread*> threads) {
+bool check_done_exec(std::vector<Thread*>& threads) {
 	for(Thread* thread : threads) {
 		if (!thread->get_halt()) {
 			std::cout << thread->get_threadid() << std::endl;
