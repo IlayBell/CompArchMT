@@ -208,22 +208,22 @@ void CORE_BlockedMT() {
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-				// ctx switch has penalty in blocked
-				cycles_blocked += SIM_GetSwitchCycles(); 
-				for (Thread* t : threads_blocked) {
-					t->update_wait_cycles(SIM_GetSwitchCycles());
+				if (ctx_switch_flag && next_thread != thread_num) {
+					cycles_blocked += SIM_GetSwitchCycles();
+					for (Thread* t : threads_blocked) {
+						t->update_wait_cycles(SIM_GetSwitchCycles());
+					}
+					thread_num = next_thread;
 				}
-
-				if (!ctx_switch_flag) {
-					while(thread->get_wait_cycles()) {
+				
+				else if(!ctx_switch_flag) {
+					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
 						}
 					}
 				}
-
-				thread_num = next_thread;
 
 				break;
 			}
@@ -238,14 +238,16 @@ void CORE_BlockedMT() {
 				thread->set_wait_cycles(SIM_GetStoreLat());
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 				
-				// ctx switch has penalty in blocked
-				cycles_blocked += SIM_GetSwitchCycles(); 
-				for (Thread* t : threads_blocked) {
-					t->update_wait_cycles(SIM_GetSwitchCycles());
+				if (ctx_switch_flag && next_thread != thread_num) {
+					cycles_blocked += SIM_GetSwitchCycles();
+					for (Thread* t : threads_blocked) {
+						t->update_wait_cycles(SIM_GetSwitchCycles());
+					}
+					thread_num = next_thread;
 				}
-
-				if (!ctx_switch_flag) {
-					while(thread->get_wait_cycles()) {
+				
+				else if(!ctx_switch_flag) {
+					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
@@ -261,29 +263,40 @@ void CORE_BlockedMT() {
 			case CMD_HALT: {
 				thread->set_halt();
 
+				
+				// Try to find a runnable thread to continue
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-				if (ctx_switch_flag) {
+				// If switching to a new thread → pay overhead
+				if (ctx_switch_flag && next_thread != thread_num) {
+					cycles_blocked += SIM_GetSwitchCycles();
+					for (Thread* t : threads_blocked) {
+						t->update_wait_cycles(SIM_GetSwitchCycles());
+					}
 					thread_num = next_thread;
-				} else {
-					// Wait until there is another available thread.
-					while(!check_done_exec(threads_blocked) && !ctx_switch_flag) {
+				}
+				// If not switching AND done → just end without overhead
+				else if (!ctx_switch_flag && check_done_exec(threads_blocked)) {
+					break;
+				}
+
+				// If not switching but not done → wait until someone becomes ready
+				else if (!ctx_switch_flag) {
+					while (!check_done_exec(threads_blocked) && !ctx_switch_flag) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
 						}
-
 						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 					}
-
-					thread_num = next_thread;
+					if (ctx_switch_flag && next_thread != thread_num) {
+						cycles_blocked += SIM_GetSwitchCycles();
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(SIM_GetSwitchCycles());
+						}
+						thread_num = next_thread;
+					}
 				}
-
-				// ctx switch has penalty in blocked only if needed ctx switch
-				if (!check_done_exec(threads_blocked)) {
-					cycles_blocked += SIM_GetSwitchCycles();
-				} 
-				
 				break;
 			}
 
