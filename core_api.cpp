@@ -371,7 +371,7 @@ void CORE_FinegrainedMT() {
 
 		ctx_switch_flag = context_switch(threads_fg, thread_num, &next_thread);
 
-		if (!check_done_exec(threads_fg) && !ctx_switch_flag) {
+		if (!ctx_switch_flag) {
 			// Wait until there is another available thread.
 			while(!check_done_exec(threads_fg) && !ctx_switch_flag) {
 				cycles_fg++;
