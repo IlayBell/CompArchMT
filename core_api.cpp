@@ -122,9 +122,9 @@ bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 		return false;
 	}
 
-	for (int i = 1; i < SIM_GetThreadsNum(); i++) {
+	for (int i = 0; i < SIM_GetThreadsNum(); i++) {
 		// Cyclic run over threads
-		next_thread_idx = (curr_t + i) % SIM_GetThreadsNum();
+		next_thread_idx = (curr_t + i + 1) % SIM_GetThreadsNum();
 		Thread* next_thread = threads.at(next_thread_idx);
 
 		if (!next_thread->get_halt() && next_thread->get_wait_cycles() == 0) {
