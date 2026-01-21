@@ -162,16 +162,49 @@ void CORE_BlockedMT() {
 	bool ctx_switch_flag = false;
 	int next_thread = 0;
 
+	bool stall = false;
+
 	while (!check_done_exec(threads_blocked)) {
+		// Cycles maintenance for threads
+		cycles_blocked++;
+
 		Thread* thread = threads_blocked.at(thread_num);
+
+
+		// Check if stall is needed
+		if (stall) {
+			for (Thread* t : threads_blocked) {
+				t->update_wait_cycles(1);
+			}
+
+			if (thread->get_wait_cycles() == 0) {
+				stall = false;
+			} 
+			
+			else if (context_switch(threads_blocked, thread_num, &next_thread)) {
+				cycles_blocked += SIM_GetSwitchCycles();
+				for (Thread* t : threads_blocked) {
+					t->update_wait_cycles(SIM_GetSwitchCycles());
+				}
+
+				thread_num = next_thread;
+				stall = false;
+				continue;
+			}
+
+			
+			if (stall) {
+				continue;
+			}
+		}
+
 
 		Instruction* inst = thread->get_inst_thread();
 		inst_num_blocked++;
 
 		int* reg_file = thread->get_context_p()->reg;
 
-		// Cycles maintenance for threads
-		cycles_blocked++;
+		
 		for (Thread* t : threads_blocked) {
 			t->update_wait_cycles(1);
 		}
@@ -204,11 +237,12 @@ void CORE_BlockedMT() {
 				uint32_t addr = reg_file[inst->src1_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
 				SIM_MemDataRead(addr, reg_file + inst->dst_index); // Used pointer arithmetics
 
-				thread->set_wait_cycles(SIM_GetLoadLat());
 
 				if (SIM_GetLoadLat() == 0) {
 					continue;
 				}
+
+				thread->set_wait_cycles(SIM_GetLoadLat());
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
@@ -222,15 +256,8 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				}
 				
-				// No other available thread
-				else {
-					while(thread->get_wait_cycles() > 0 && !check_done_exec(threads_blocked)) {
-						cycles_blocked++;
-						for (Thread* t : threads_blocked) {
-							t->update_wait_cycles(1);
-						}
-					}
-				}
+				// No other available thread - Stall
+				stall = true;
 
 				break;
 			}
@@ -249,25 +276,19 @@ void CORE_BlockedMT() {
 				thread->set_wait_cycles(SIM_GetStoreLat());
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
-				
+
+				// If context switch was successful, manualy manage the clock cycles
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
 						t->update_wait_cycles(SIM_GetSwitchCycles());
 					}
+
 					thread_num = next_thread;
 				}
 				
-				else if(!ctx_switch_flag) {
-					while(thread->get_wait_cycles() > 0 && !check_done_exec(threads_blocked)) {
-						cycles_blocked++;
-						for (Thread* t : threads_blocked) {
-							t->update_wait_cycles(1);
-						}
-					}
-				}
-
-				thread_num = next_thread;
+				// No other available thread - Stall
+				stall = true;
 
 				break;
 			}
@@ -292,23 +313,8 @@ void CORE_BlockedMT() {
 					break;
 				}
 
-				// If not switching but not done - wait until someone becomes ready
-				else if (!ctx_switch_flag) {
-					while (!check_done_exec(threads_blocked) && !ctx_switch_flag) {
-						cycles_blocked++;
-						for (Thread* t : threads_blocked) {
-							t->update_wait_cycles(1);
-						}
-						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
-					}
-					if (ctx_switch_flag && next_thread != thread_num) {
-						cycles_blocked += SIM_GetSwitchCycles();
-						for (Thread* t : threads_blocked) {
-							t->update_wait_cycles(SIM_GetSwitchCycles());
-						}
-						thread_num = next_thread;
-					}
-				}
+				stall = true;
+				
 				break;
 			}
 
