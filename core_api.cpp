@@ -206,8 +206,13 @@ void CORE_BlockedMT() {
 
 				thread->set_wait_cycles(SIM_GetLoadLat());
 
+				if (SIM_GetLoadLat() == 0) {
+					continue;
+				}
+
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
+				// If able to perform ctx switch trivially - do it
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
@@ -216,11 +221,29 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				}
 				
+				// Needs to stall
 				else if(!ctx_switch_flag) {
-					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
+					while(!check_done_exec(threads_blocked) && thread->get_wait_cycles() > 0 && !ctx_switch_flag) {
+						// Stall
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
+						}
+
+						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+					}
+
+					// Check if current thread is available - no ctx switch
+					if (thread->get_wait_cycles() > 0) {
+						next_thread = thread_num;
+					}
+
+					// Another thread is available - ctx switch + penalty
+					else if (ctx_switch_flag) {
+						// Perform ctx switch penalty
+						cycles_blocked += SIM_GetSwitchCycles();
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(SIM_GetSwitchCycles());
 						}
 					}
 				}
@@ -233,11 +256,17 @@ void CORE_BlockedMT() {
 
 				// Computing address in case of src2 being imm or not.
 				uint32_t addr = reg_file[inst->dst_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
-				SIM_MemDataWrite(addr, reg_file[inst->src1_index]); // Used pointer arithmetics
+				SIM_MemDataWrite(addr, reg_file[inst->src1_index]);
+
+				if (SIM_GetStoreLat() == 0) {
+					continue;
+				}
 				
 				thread->set_wait_cycles(SIM_GetStoreLat());
+
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 				
+				// If able to perform ctx switch trivially - do it
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
@@ -246,11 +275,29 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				}
 				
+				// Needs to stall
 				else if(!ctx_switch_flag) {
-					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
+					while(!check_done_exec(threads_blocked) && thread->get_wait_cycles() > 0 && !ctx_switch_flag) {
+						// Stall
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
+						}
+
+						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+					}
+
+					// Check if current thread is available - no ctx switch
+					if (thread->get_wait_cycles() > 0) {
+						next_thread = thread_num;
+					}
+
+					// Another thread is available - ctx switch + penalty
+					else if (ctx_switch_flag) {
+						// Perform ctx switch penalty
+						cycles_blocked += SIM_GetSwitchCycles();
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(SIM_GetSwitchCycles());
 						}
 					}
 				}
@@ -267,7 +314,7 @@ void CORE_BlockedMT() {
 				// Try to find a runnable thread to continue
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-				// If switching to a new thread → pay overhead
+				// If switching to a new thread - pay overhead
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
@@ -275,12 +322,12 @@ void CORE_BlockedMT() {
 					}
 					thread_num = next_thread;
 				}
-				// If not switching AND done → just end without overhead
+				// If not switching AND done - just end without overhead
 				else if (!ctx_switch_flag && check_done_exec(threads_blocked)) {
 					break;
 				}
 
-				// If not switching but not done → wait until someone becomes ready
+				// If not switching but not done - wait until someone becomes ready
 				else if (!ctx_switch_flag) {
 					while (!check_done_exec(threads_blocked) && !ctx_switch_flag) {
 						cycles_blocked++;
