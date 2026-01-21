@@ -212,38 +212,22 @@ void CORE_BlockedMT() {
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-				// If able to perform ctx switch trivially - do it
+				// If context switch was successful, manualy manage the clock cycles
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
 						t->update_wait_cycles(SIM_GetSwitchCycles());
 					}
+
 					thread_num = next_thread;
 				}
 				
-				// Needs to stall
-				else if(!ctx_switch_flag) {
-					while(!check_done_exec(threads_blocked) && thread->get_wait_cycles() > 0 && !ctx_switch_flag) {
-						// Stall
+				// No other available thread
+				else {
+					while(thread->get_wait_cycles() > 0 && !check_done_exec(threads_blocked)) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
-						}
-
-						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
-					}
-
-					// Check if current thread is available - no ctx switch
-					if (thread->get_wait_cycles() > 0) {
-						next_thread = thread_num;
-					}
-
-					// Another thread is available - ctx switch + penalty
-					else if (ctx_switch_flag) {
-						// Perform ctx switch penalty
-						cycles_blocked += SIM_GetSwitchCycles();
-						for (Thread* t : threads_blocked) {
-							t->update_wait_cycles(SIM_GetSwitchCycles());
 						}
 					}
 				}
@@ -266,7 +250,6 @@ void CORE_BlockedMT() {
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 				
-				// If able to perform ctx switch trivially - do it
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
@@ -275,29 +258,11 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				}
 				
-				// Needs to stall
 				else if(!ctx_switch_flag) {
-					while(!check_done_exec(threads_blocked) && thread->get_wait_cycles() > 0 && !ctx_switch_flag) {
-						// Stall
+					while(thread->get_wait_cycles() > 0 && !check_done_exec(threads_blocked)) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
-						}
-
-						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
-					}
-
-					// Check if current thread is available - no ctx switch
-					if (thread->get_wait_cycles() > 0) {
-						next_thread = thread_num;
-					}
-
-					// Another thread is available - ctx switch + penalty
-					else if (ctx_switch_flag) {
-						// Perform ctx switch penalty
-						cycles_blocked += SIM_GetSwitchCycles();
-						for (Thread* t : threads_blocked) {
-							t->update_wait_cycles(SIM_GetSwitchCycles());
 						}
 					}
 				}
