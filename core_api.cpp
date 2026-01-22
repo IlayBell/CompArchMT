@@ -163,6 +163,7 @@ void CORE_BlockedMT() {
 	int next_thread = 0;
 
 	while (!check_done_exec(threads_blocked)) {
+		std::cout << "thread=" << thread_num << " cycle=" << cycles_blocked << std::endl;
 		Thread* thread = threads_blocked.at(thread_num);
 
 		Instruction* inst = thread->get_inst_thread();
