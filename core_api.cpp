@@ -129,7 +129,7 @@ bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 
 		if (!next_thread->get_halt() && next_thread->get_wait_cycles() == 0) {
 			*target_t = next_thread_idx;
-			std::cout << "ctx switched" << std::endl;
+			//std::cout << "ctx switched" << std::endl;
 			return true;
 		}
 	}
@@ -177,7 +177,7 @@ void CORE_BlockedMT() {
 			t->update_wait_cycles(1);
 		}
 
-		std::cout << "thread=" << thread_num << " cycle=" << cycles_blocked << " cmd=" << inst->opcode << std::endl;
+		//std::cout << "thread=" << thread_num << " cycle=" << cycles_blocked << " cmd=" << inst->opcode << std::endl;
 
 		switch (inst->opcode) {
 			case CMD_ADD: { // dst <- src1 + src2
