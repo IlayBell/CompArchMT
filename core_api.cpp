@@ -162,49 +162,16 @@ void CORE_BlockedMT() {
 	bool ctx_switch_flag = false;
 	int next_thread = 0;
 
-	bool stall = false;
-
 	while (!check_done_exec(threads_blocked)) {
-		// Cycles maintenance for threads
-		cycles_blocked++;
-
 		Thread* thread = threads_blocked.at(thread_num);
-
-
-		// Check if stall is needed
-		if (stall) {
-			for (Thread* t : threads_blocked) {
-				t->update_wait_cycles(1);
-			}
-
-			if (thread->get_wait_cycles() == 0) {
-				stall = false;
-			} 
-			
-			else if (context_switch(threads_blocked, thread_num, &next_thread)) {
-				cycles_blocked += SIM_GetSwitchCycles();
-				for (Thread* t : threads_blocked) {
-					t->update_wait_cycles(SIM_GetSwitchCycles());
-				}
-
-				thread_num = next_thread;
-				stall = false;
-				continue;
-			}
-
-			
-			if (stall) {
-				continue;
-			}
-		}
-
 
 		Instruction* inst = thread->get_inst_thread();
 		inst_num_blocked++;
 
 		int* reg_file = thread->get_context_p()->reg;
 
-		
+		// Cycles maintenance for threads
+		cycles_blocked++;
 		for (Thread* t : threads_blocked) {
 			t->update_wait_cycles(1);
 		}
@@ -237,27 +204,26 @@ void CORE_BlockedMT() {
 				uint32_t addr = reg_file[inst->src1_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
 				SIM_MemDataRead(addr, reg_file + inst->dst_index); // Used pointer arithmetics
 
-
-				if (SIM_GetLoadLat() == 0) {
-					continue;
-				}
-
 				thread->set_wait_cycles(SIM_GetLoadLat());
 
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-				// If context switch was successful, manualy manage the clock cycles
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
 						t->update_wait_cycles(SIM_GetSwitchCycles());
 					}
-
 					thread_num = next_thread;
 				}
 				
-				// No other available thread - Stall
-				stall = true;
+				else if(!ctx_switch_flag) {
+					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
+						cycles_blocked++;
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(1);
+						}
+					}
+				}
 
 				break;
 			}
@@ -267,28 +233,29 @@ void CORE_BlockedMT() {
 
 				// Computing address in case of src2 being imm or not.
 				uint32_t addr = reg_file[inst->dst_index] + (inst->isSrc2Imm ? inst->src2_index_imm : reg_file[inst->src2_index_imm]);
-				SIM_MemDataWrite(addr, reg_file[inst->src1_index]);
-
-				if (SIM_GetStoreLat() == 0) {
-					continue;
-				}
+				SIM_MemDataWrite(addr, reg_file[inst->src1_index]); // Used pointer arithmetics
 				
 				thread->set_wait_cycles(SIM_GetStoreLat());
-
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
-
-				// If context switch was successful, manualy manage the clock cycles
+				
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
 						t->update_wait_cycles(SIM_GetSwitchCycles());
 					}
-
 					thread_num = next_thread;
 				}
 				
-				// No other available thread - Stall
-				stall = true;
+				else if(!ctx_switch_flag) {
+					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
+						cycles_blocked++;
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(1);
+						}
+					}
+				}
+
+				thread_num = next_thread;
 
 				break;
 			}
@@ -300,7 +267,7 @@ void CORE_BlockedMT() {
 				// Try to find a runnable thread to continue
 				ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 
-				// If switching to a new thread - pay overhead
+				// If switching to a new thread → pay overhead
 				if (ctx_switch_flag && next_thread != thread_num) {
 					cycles_blocked += SIM_GetSwitchCycles();
 					for (Thread* t : threads_blocked) {
@@ -308,13 +275,28 @@ void CORE_BlockedMT() {
 					}
 					thread_num = next_thread;
 				}
-				// If not switching AND done - just end without overhead
+				// If not switching AND done → just end without overhead
 				else if (!ctx_switch_flag && check_done_exec(threads_blocked)) {
 					break;
 				}
 
-				stall = true;
-				
+				// If not switching but not done → wait until someone becomes ready
+				else if (!ctx_switch_flag) {
+					while (!check_done_exec(threads_blocked) && !ctx_switch_flag) {
+						cycles_blocked++;
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(1);
+						}
+						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+					}
+					if (ctx_switch_flag && next_thread != thread_num) {
+						cycles_blocked += SIM_GetSwitchCycles();
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(SIM_GetSwitchCycles());
+						}
+						thread_num = next_thread;
+					}
+				}
 				break;
 			}
 
