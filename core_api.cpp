@@ -221,7 +221,7 @@ void CORE_BlockedMT() {
 				
 				// STALL
 				else if(!ctx_switch_flag) {
-					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked) && !ctx_switch_flag) {
+					while(thread->get_wait_cycles() > 0 && !check_done_exec(threads_blocked) && !ctx_switch_flag) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
@@ -230,7 +230,7 @@ void CORE_BlockedMT() {
 						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 					}
 
-					if (ctx_switch_flag) {
+					if (ctx_switch_flag && thread->get_wait_cycles() > 0) {
 						cycles_blocked += SIM_GetSwitchCycles();
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(SIM_GetSwitchCycles());
@@ -270,7 +270,7 @@ void CORE_BlockedMT() {
 						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
 					}
 
-					if (ctx_switch_flag) {
+					if (ctx_switch_flag && thread->get_wait_cycles() > 0) {
 						cycles_blocked += SIM_GetSwitchCycles();
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(SIM_GetSwitchCycles());
