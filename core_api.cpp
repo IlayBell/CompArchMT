@@ -219,12 +219,23 @@ void CORE_BlockedMT() {
 					thread_num = next_thread;
 				}
 				
+				// STALL
 				else if(!ctx_switch_flag) {
-					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
+					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked) && !ctx_switch_flag) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
 						}
+
+						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+					}
+
+					if (ctx_switch_flag) {
+						cycles_blocked += SIM_GetSwitchCycles();
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(SIM_GetSwitchCycles());
+						}
+						thread_num = next_thread;
 					}
 				}
 
@@ -250,15 +261,23 @@ void CORE_BlockedMT() {
 				}
 				
 				else if(!ctx_switch_flag) {
-					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked)) {
+					while(thread->get_wait_cycles() && !check_done_exec(threads_blocked) && !ctx_switch_flag) {
 						cycles_blocked++;
 						for (Thread* t : threads_blocked) {
 							t->update_wait_cycles(1);
 						}
+
+						ctx_switch_flag = context_switch(threads_blocked, thread_num, &next_thread);
+					}
+
+					if (ctx_switch_flag) {
+						cycles_blocked += SIM_GetSwitchCycles();
+						for (Thread* t : threads_blocked) {
+							t->update_wait_cycles(SIM_GetSwitchCycles());
+						}
+						thread_num = next_thread;
 					}
 				}
-
-				thread_num = next_thread;
 
 				break;
 			}
