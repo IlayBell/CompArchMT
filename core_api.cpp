@@ -129,6 +129,7 @@ bool context_switch(std::vector<Thread*>& threads, int curr_t, int* target_t) {
 
 		if (!next_thread->get_halt() && next_thread->get_wait_cycles() == 0) {
 			*target_t = next_thread_idx;
+			std::cout << "ctx switched" << std::endl;
 			return true;
 		}
 	}
