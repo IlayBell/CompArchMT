@@ -163,7 +163,6 @@ void CORE_BlockedMT() {
 	int next_thread = 0;
 
 	while (!check_done_exec(threads_blocked)) {
-		std::cout << "thread=" << thread_num << " cycle=" << cycles_blocked << std::endl;
 		Thread* thread = threads_blocked.at(thread_num);
 
 		Instruction* inst = thread->get_inst_thread();
@@ -176,6 +175,8 @@ void CORE_BlockedMT() {
 		for (Thread* t : threads_blocked) {
 			t->update_wait_cycles(1);
 		}
+
+		std::cout << "thread=" << thread_num << " cycle=" << cycles_blocked << " cmd=" << inst->opcode << std::endl;
 
 		switch (inst->opcode) {
 			case CMD_ADD: { // dst <- src1 + src2
